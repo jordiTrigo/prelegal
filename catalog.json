@@ -1,0 +1,67 @@
+{
+  "source": "https://github.com/CommonPaper",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "templates": [
+    {
+      "name": "AI Addendum",
+      "description": "Common Paper standard AI Addendum, a set of terms that can be attached to an existing agreement to govern the use of artificial intelligence products and services.",
+      "filename": "AI-Addendum.md"
+    },
+    {
+      "name": "Business Associate Agreement (BAA)",
+      "description": "Common Paper standard Business Associate Agreement for HIPAA-covered entities and their business associates handling protected health information.",
+      "filename": "BAA.md"
+    },
+    {
+      "name": "Cloud Service Agreement (CSA)",
+      "description": "Common Paper standard Cloud Service Agreement setting out the standard terms for providing a cloud-based software service to a customer.",
+      "filename": "CSA.md"
+    },
+    {
+      "name": "Design Partner Agreement",
+      "description": "Common Paper standard Design Partner Agreement for collaborating with early customers to develop and test a new product or feature.",
+      "filename": "design-partner-agreement.md"
+    },
+    {
+      "name": "Data Processing Agreement (DPA)",
+      "description": "Common Paper standard Data Processing Agreement governing the processing of personal data on behalf of a customer in compliance with data protection laws.",
+      "filename": "DPA.md"
+    },
+    {
+      "name": "Mutual NDA - Cover Page",
+      "description": "Cover Page for the Common Paper standard Mutual Non-Disclosure Agreement, capturing the deal-specific details that incorporate the Standard Terms by reference.",
+      "filename": "Mutual-NDA-coverpage.md"
+    },
+    {
+      "name": "Mutual NDA - Standard Terms",
+      "description": "Standard Terms for the Common Paper standard Mutual Non-Disclosure Agreement protecting confidential information exchanged between two parties.",
+      "filename": "Mutual-NDA.md"
+    },
+    {
+      "name": "Partnership Agreement",
+      "description": "Common Paper standard Partnership Agreement establishing the terms of a commercial partnership, such as referral, reseller, or co-marketing arrangements.",
+      "filename": "Partnership-Agreement.md"
+    },
+    {
+      "name": "Pilot Agreement",
+      "description": "Common Paper standard Pilot Agreement for running a time-limited trial or proof of concept of a product or service with a customer.",
+      "filename": "Pilot-Agreement.md"
+    },
+    {
+      "name": "Professional Services Agreement (PSA)",
+      "description": "Common Paper standard Professional Services Agreement setting out the terms for providing professional or consulting services to a customer.",
+      "filename": "psa.md"
+    },
+    {
+      "name": "Service Level Agreement (SLA)",
+      "description": "Common Paper standard Service Level Agreement defining service availability commitments, support response times, and related remedies.",
+      "filename": "sla.md"
+    },
+    {
+      "name": "Software License Agreement",
+      "description": "Common Paper standard Software License Agreement setting out the terms for licensing on-premise or downloadable software to a customer.",
+      "filename": "Software-License-Agreement.md"
+    }
+  ]
+}
