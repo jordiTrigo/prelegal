@@ -78,6 +78,10 @@ pnpm-debug.log*
 
 # Testing
 coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
 
 # Turbo / caches
 .turbo/
