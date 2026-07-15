@@ -28,9 +28,11 @@ export function NdaDocument({ data }: { data: NdaFormData }) {
         <table className="mt-4 w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border px-2 py-1 text-left" />
+              <th className="border px-2 py-1 text-left" scope="col">
+                <span className="sr-only">Field</span>
+              </th>
               {doc.parties.map((party) => (
-                <th key={party.label} className="border px-2 py-1 text-left">
+                <th key={party.label} className="border px-2 py-1 text-left" scope="col">
                   {party.label}
                 </th>
               ))}

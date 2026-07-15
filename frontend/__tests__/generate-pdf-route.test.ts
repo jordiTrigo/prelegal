@@ -7,16 +7,14 @@ import { defaultNdaFormData, type NdaFormData } from "@/lib/nda-schema";
 // can't transform cleanly. The route's own logic (validation + response
 // wiring) is what we're testing here; real PDF rendering is covered by the
 // Playwright e2e test and was manually verified against a running server.
-const renderToBuffer = jest.fn(async (..._args: unknown[]) =>
-  Buffer.from("%PDF-1.4 mock content")
-);
+const renderToBuffer = jest.fn(async () => Buffer.from("%PDF-1.4 mock content"));
 jest.mock("@react-pdf/renderer", () => ({
   Document: () => null,
   Page: () => null,
   Text: () => null,
   View: () => null,
   StyleSheet: { create: (styles: unknown) => styles },
-  renderToBuffer: (...args: unknown[]) => renderToBuffer(...args),
+  renderToBuffer: () => renderToBuffer(),
 }));
 
 const validData: NdaFormData = {

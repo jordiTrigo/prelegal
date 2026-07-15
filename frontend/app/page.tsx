@@ -42,7 +42,7 @@ export default function Home() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
+    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
       <header>
         <h1 className="text-2xl font-bold">Mutual NDA Creator</h1>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -84,6 +84,6 @@ export default function Home() {
           <NdaDocument data={data} />
         </section>
       </div>
-    </div>
+    </main>
   );
 }

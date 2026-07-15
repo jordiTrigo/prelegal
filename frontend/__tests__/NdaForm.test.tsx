@@ -51,4 +51,36 @@ describe("NdaForm", () => {
     const lastCall = onChange.mock.calls.at(-1)?.[0] as NdaFormData;
     expect(lastCall.mndaTerm).toEqual({ type: "until_terminated" });
   });
+
+  it("lets the user clear and retype the MNDA term years without concatenating digits", async () => {
+    // Regression test: a plain controlled number input that falls back to 1
+    // on every empty keystroke causes backspace-then-type to append onto
+    // the forced "1" (e.g. typing "3" over a cleared "1" produces "13").
+    const user = userEvent.setup();
+    const onChange = jest.fn();
+    const { container } = render(<Wrapper onChange={onChange} />);
+
+    const yearsInput = container.querySelector<HTMLInputElement>("#mnda-term-years")!;
+    expect(yearsInput.value).toBe("1");
+
+    await user.clear(yearsInput);
+    await user.type(yearsInput, "3");
+
+    const lastCall = onChange.mock.calls.at(-1)?.[0] as NdaFormData;
+    expect(lastCall.mndaTerm).toEqual({ type: "expires", years: 3 });
+  });
+
+  it("falls back to 1 year on blur if the years field is left empty", async () => {
+    const user = userEvent.setup();
+    const onChange = jest.fn();
+    const { container } = render(<Wrapper onChange={onChange} />);
+
+    const yearsInput = container.querySelector<HTMLInputElement>("#mnda-term-years")!;
+    await user.clear(yearsInput);
+    await user.tab();
+
+    expect(yearsInput.value).toBe("1");
+    const lastCall = onChange.mock.calls.at(-1)?.[0] as NdaFormData;
+    expect(lastCall.mndaTerm).toEqual({ type: "expires", years: 1 });
+  });
 });

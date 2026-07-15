@@ -4,6 +4,10 @@ test("filling in the form updates the preview and produces a downloadable PDF", 
   page,
 }) => {
   await page.goto("/");
+  // Wait for React to hydrate before interacting: an early `fill()` on a
+  // still-static server-rendered input can race client-side hydration and
+  // get silently dropped once React attaches its event listeners.
+  await page.waitForLoadState("networkidle");
 
   const partyOne = page.getByRole("group", { name: "Party 1" });
   const partyTwo = page.getByRole("group", { name: "Party 2" });

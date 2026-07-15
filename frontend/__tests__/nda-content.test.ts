@@ -36,6 +36,13 @@ describe("formatDisplayDate", () => {
   it("returns a placeholder for an empty date", () => {
     expect(formatDisplayDate("")).toBe("[Effective Date not set]");
   });
+
+  it("does not apply the legacy two-digit-year adjustment to a low year", () => {
+    // Date.UTC(year, ...) adds 1900 to any year 0-99; parsing as an ISO
+    // date-time string must not have that behavior. Regression test for a
+    // bug where "0026-07-14" silently rendered as "January 1, 1926"-ish text.
+    expect(formatDisplayDate("0026-07-14")).toBe("July 14, 26");
+  });
 });
 
 describe("formatMndaTerm", () => {

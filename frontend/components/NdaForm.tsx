@@ -1,10 +1,75 @@
 "use client";
 
+import { useState } from "react";
 import type { NdaFormData, PartyInfo } from "@/lib/nda-schema";
+
+const MIN_TERM_YEARS = 1;
+const MAX_TERM_YEARS = 99;
 
 interface NdaFormProps {
   data: NdaFormData;
   onChange: (data: NdaFormData) => void;
+}
+
+/**
+ * A number input that keeps its own draft text while the user is typing.
+ * A plain controlled `<input value={years} onChange={... Number(e.target.value) || 1}>`
+ * snaps back to 1 the instant the field is cleared, so backspacing "1" to
+ * type "3" ends up appending onto the forced "1" (e.g. "13") instead of
+ * replacing it. Deferring the fallback to blur lets the user clear and
+ * retype freely.
+ */
+function YearsInput({
+  id,
+  years,
+  disabled,
+  onCommit,
+}: {
+  id: string;
+  years: number;
+  disabled: boolean;
+  onCommit: (years: number) => void;
+}) {
+  const [text, setText] = useState(String(years));
+  // Re-sync the draft text when `years` changes for a reason other than this
+  // input's own onChange/onBlur (e.g. switching the radio option resets it).
+  // Adjusting state during render (rather than in an effect) avoids an extra
+  // commit; see https://react.dev/learn/you-might-not-need-an-effect.
+  const [prevYears, setPrevYears] = useState(years);
+  if (years !== prevYears) {
+    setPrevYears(years);
+    setText(String(years));
+  }
+
+  function clamp(value: number): number {
+    return Math.min(MAX_TERM_YEARS, Math.max(MIN_TERM_YEARS, value));
+  }
+
+  return (
+    <input
+      id={id}
+      type="number"
+      min={MIN_TERM_YEARS}
+      max={MAX_TERM_YEARS}
+      className="w-16 rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+      disabled={disabled}
+      value={text}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        const parsed = Number(raw);
+        if (raw !== "" && Number.isInteger(parsed) && parsed >= MIN_TERM_YEARS && parsed <= MAX_TERM_YEARS) {
+          onCommit(parsed);
+        }
+      }}
+      onBlur={() => {
+        const parsed = Number(text);
+        const next = text === "" || !Number.isInteger(parsed) ? MIN_TERM_YEARS : clamp(parsed);
+        setText(String(next));
+        onCommit(next);
+      }}
+    />
+  );
 }
 
 function PartyFields({
@@ -101,6 +166,8 @@ export function NdaForm({ data, onChange }: NdaFormProps) {
         <input
           id="effective-date"
           type="date"
+          min="1900-01-01"
+          max="9999-12-31"
           className="mt-1 w-full rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
           value={data.effectiveDate}
           onChange={(e) => onChange({ ...data, effectiveDate: e.target.value })}
@@ -117,18 +184,11 @@ export function NdaForm({ data, onChange }: NdaFormProps) {
             onChange={() => onChange({ ...data, mndaTerm: { type: "expires", years: 1 } })}
           />
           Expires
-          <input
-            type="number"
-            min={1}
-            className="w-16 rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+          <YearsInput
+            id="mnda-term-years"
+            years={data.mndaTerm.type === "expires" ? data.mndaTerm.years : 1}
             disabled={data.mndaTerm.type !== "expires"}
-            value={data.mndaTerm.type === "expires" ? data.mndaTerm.years : 1}
-            onChange={(e) =>
-              onChange({
-                ...data,
-                mndaTerm: { type: "expires", years: Number(e.target.value) || 1 },
-              })
-            }
+            onCommit={(years) => onChange({ ...data, mndaTerm: { type: "expires", years } })}
           />
           year(s) from Effective Date
         </label>
@@ -154,17 +214,12 @@ export function NdaForm({ data, onChange }: NdaFormProps) {
               onChange({ ...data, confidentialityTerm: { type: "years", years: 1 } })
             }
           />
-          <input
-            type="number"
-            min={1}
-            className="w-16 rounded border border-zinc-300 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+          <YearsInput
+            id="confidentiality-term-years"
+            years={data.confidentialityTerm.type === "years" ? data.confidentialityTerm.years : 1}
             disabled={data.confidentialityTerm.type !== "years"}
-            value={data.confidentialityTerm.type === "years" ? data.confidentialityTerm.years : 1}
-            onChange={(e) =>
-              onChange({
-                ...data,
-                confidentialityTerm: { type: "years", years: Number(e.target.value) || 1 },
-              })
+            onCommit={(years) =>
+              onChange({ ...data, confidentialityTerm: { type: "years", years } })
             }
           />
           year(s) from Effective Date
