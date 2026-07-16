@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.responses import FileResponse
 
+from app.chat import router as chat_router
 from app.db import init_db
 from app.settings import settings
 from app.static import resolve_frontend_file
@@ -28,6 +29,7 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+api_router.include_router(chat_router)
 app.include_router(api_router)
 
 
