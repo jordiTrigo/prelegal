@@ -1,88 +1,62 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { NdaForm } from "@/components/NdaForm";
-import { NdaDocument } from "@/components/NdaDocument";
-import { defaultNdaFormData, ndaFormSchema, type NdaFormData } from "@/lib/nda-schema";
+import { useRouter } from "next/navigation";
 
-export default function Home() {
-  const [data, setData] = useState<NdaFormData>(defaultNdaFormData);
-  const [downloadState, setDownloadState] = useState<"idle" | "pending" | "error">("idle");
+/**
+ * Fake login screen: any input brings the user into the platform.
+ * Real authentication arrives in a later task.
+ */
+export default function LoginPage() {
+  const router = useRouter();
 
-  const validation = useMemo(() => ndaFormSchema.safeParse(data), [data]);
-
-  async function handleDownload() {
-    if (!validation.success) return;
-
-    setDownloadState("pending");
-    try {
-      const response = await fetch("/api/generate-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validation.data),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to generate PDF (status ${response.status})`);
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = "mutual-nda.pdf";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(url);
-      setDownloadState("idle");
-    } catch {
-      setDownloadState("error");
-    }
+  // The form also has action="/app" so a native (pre-hydration) submit
+  // brings the user into the platform too; the inputs deliberately have no
+  // `name` so nothing typed ends up in the URL on that path.
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    router.push("/app");
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
-      <header>
-        <h1 className="text-2xl font-bold">Mutual NDA Creator</h1>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Fill in the key details below. The Mutual Non-Disclosure Agreement on the right updates
-          live and can be downloaded as a PDF.
+    <main className="flex min-h-screen items-center justify-center px-6">
+      <div className="w-full max-w-sm rounded-lg border border-zinc-300 p-8 shadow-sm dark:border-zinc-700">
+        <h1 className="text-2xl font-bold text-brand-navy dark:text-brand-blue">Prelegal</h1>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          Sign in to draft legal agreements.
         </p>
-      </header>
 
-      <div className="grid flex-1 gap-8 lg:grid-cols-2">
-        <section aria-label="NDA details form">
-          <NdaForm data={data} onChange={setData} />
-
-          <div className="mt-6">
-            <button
-              type="button"
-              className="rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={!validation.success || downloadState === "pending"}
-              onClick={handleDownload}
-            >
-              {downloadState === "pending" ? "Generating PDF..." : "Download PDF"}
-            </button>
-            {!validation.success && (
-              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                Please fill in all required fields before downloading.
-              </p>
-            )}
-            {downloadState === "error" && (
-              <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                Something went wrong generating the PDF. Please try again.
-              </p>
-            )}
+        <form className="mt-6 flex flex-col gap-4" action="/app" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue dark:border-zinc-700"
+            />
           </div>
-        </section>
 
-        <section
-          aria-label="NDA preview"
-          className="overflow-y-auto rounded-md border border-zinc-300 p-6 dark:border-zinc-700"
-        >
-          <NdaDocument data={data} />
-        </section>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium">
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm focus:border-brand-blue focus:outline-none focus:ring-2 focus:ring-brand-blue dark:border-zinc-700"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="mt-2 rounded-full bg-brand-navy px-5 py-2 text-sm font-medium text-white hover:opacity-90 dark:bg-brand-blue dark:text-brand-navy"
+          >
+            Sign in
+          </button>
+        </form>
       </div>
     </main>
   );

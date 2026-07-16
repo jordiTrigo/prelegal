@@ -3,10 +3,13 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // More parallel browsers than this starves WebKit of CPU long enough that
+  // React hydration on /app can exceed the 30s test timeout.
+  workers: 2,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:8001",
     trace: "on-first-retry",
   },
   projects: [
@@ -15,11 +18,10 @@ export default defineConfig({
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
   webServer: {
-    // Run against a production build: `next dev`'s persistent HMR
-    // WebSocket keeps the connection open indefinitely, which makes
-    // `page.waitForLoadState("networkidle")` in the specs unreliable.
-    command: "npm run build && npm run start",
-    url: "http://localhost:3000",
+    // Exercise the real deliverable: the static export served by FastAPI,
+    // exactly as it runs in the Docker container.
+    command: 'npm run build && cd ../backend && uv run uvicorn app.main:app --port 8001',
+    url: "http://localhost:8001/api/health",
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },
