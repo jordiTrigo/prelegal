@@ -1,13 +1,19 @@
 """AI chat endpoint: freeform conversation that extracts Mutual NDA fields.
 
 Fields are modeled flat (mndaTermType/mndaTermYears as independent optional
-keys, not a nested discriminated union) since strict structured-output modes
-across LLM providers support flat optional/enum fields far more reliably than
-nested oneOf/discriminator schemas. The frontend reconstructs the nested
-NdaFormData shape for its own Zod-validated preview.
+keys, not a nested discriminated union) for a simpler shape to spell out in
+the prompt. The frontend reconstructs the nested NdaFormData shape for its
+own Zod-validated preview.
+
+Uses loose `json_object` response formatting rather than a strict
+Pydantic/json_schema response_format: the free model in use is only
+available via a provider (see MODEL below) that doesn't reliably honor
+schema-constrained decoding, so the exact output shape is spelled out in
+SYSTEM_PROMPT_TEMPLATE instead and validated field-by-field on the way out.
 """
 
 import json
+import logging
 import re
 from typing import Literal
 
@@ -15,8 +21,19 @@ from fastapi import APIRouter, HTTPException
 from litellm import completion
 from pydantic import BaseModel
 
-MODEL = "openrouter/openai/gpt-oss-120b:free"
-EXTRA_BODY = {"provider": {"order": ["cerebras"]}}
+logger = logging.getLogger(__name__)
+
+# Cerebras doesn't host this free model (only the paid openai/gpt-oss-120b),
+# so OpenRouter routes it to whichever provider is available - currently
+# Darkbloom, which doesn't always honor response_format on conversational
+# prompts. _call_llm retries once with a stricter reminder before giving up.
+MODEL = "openrouter/openai/gpt-oss-20b:free"
+
+JSON_ONLY_REMINDER = (
+    "Reminder: reply with ONLY a single JSON object matching the schema - "
+    "no markdown, no prose outside the JSON."
+)
+MAX_LLM_ATTEMPTS = 2
 
 DATE_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 MIN_EFFECTIVE_DATE_YEAR = 1900
@@ -89,6 +106,11 @@ include a field if the user actually stated it - never guess or invent a value.
 2. Write a short, friendly reply (2-4 sentences) acknowledging what you learned and asking \
 about one or two still-missing fields. Do not interrogate with a full checklist.
 3. If everything is known, tell the user the NDA is ready to preview and download.
+
+Reply with ONLY a single JSON object of the exact shape {{"reply": string, "fields": object}} - \
+no markdown, no prose outside the JSON. "fields" must only use the field names listed above \
+(partyOne/partyTwo are objects with companyName/signerName/signerTitle/noticeAddress); omit any \
+field you didn't just learn.
 """
 
 
@@ -98,17 +120,28 @@ def _build_system_prompt(known_fields: NdaFields) -> str:
     )
 
 
+class LLMOutputError(Exception):
+    """Raised when the model never returns valid JSON, even after a retry."""
+
+
 def _call_llm(messages: list[ChatMessage], known_fields: NdaFields) -> dict:
     llm_messages = [{"role": "system", "content": _build_system_prompt(known_fields)}]
     llm_messages += [{"role": m.role, "content": m.content} for m in messages]
-    response = completion(
-        model=MODEL,
-        messages=llm_messages,
-        response_format=ChatResponse,
-        reasoning_effort="low",
-        extra_body=EXTRA_BODY,
-    )
-    return json.loads(response.choices[0].message.content)
+
+    for attempt in range(MAX_LLM_ATTEMPTS):
+        if attempt:
+            llm_messages.append({"role": "system", "content": JSON_ONLY_REMINDER})
+        response = completion(
+            model=MODEL,
+            messages=llm_messages,
+            response_format={"type": "json_object"},
+        )
+        try:
+            return json.loads(response.choices[0].message.content)
+        except json.JSONDecodeError:
+            continue
+
+    raise LLMOutputError("Model did not return valid JSON after retrying")
 
 
 def _valid_party(raw: object) -> PartyFields | None:
@@ -188,7 +221,11 @@ router = APIRouter()
 def chat(request: ChatRequest) -> ChatResponse:
     try:
         raw = _call_llm(request.messages, request.fields)
+    except LLMOutputError:
+        logger.warning("Model did not return valid JSON after retrying")
+        return ChatResponse(reply="Sorry, could you rephrase that?", fields=request.fields)
     except Exception as exc:
+        logger.exception("LLM call failed")
         raise HTTPException(status_code=502, detail="Chat service unavailable") from exc
 
     reply = _valid_text(raw.get("reply")) or "Sorry, could you rephrase that?"

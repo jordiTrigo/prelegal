@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.chat as chat_module
-from app.chat import NdaFields, merge_fields, validate_extracted_fields
+from app.chat import LLMOutputError, NdaFields, merge_fields, validate_extracted_fields
 
 
 class FakeMessage:
@@ -27,6 +27,16 @@ class FakeResponse:
 def fake_completion(content: dict):
     def _completion(**kwargs) -> FakeResponse:
         return FakeResponse(json.dumps(content))
+
+    return _completion
+
+
+def fake_completion_sequence(contents: list[str]):
+    """Returns each raw string in order across successive calls."""
+    remaining = iter(contents)
+
+    def _completion(**kwargs) -> FakeResponse:
+        return FakeResponse(next(remaining))
 
     return _completion
 
@@ -96,6 +106,34 @@ def test_validate_extracted_fields_handles_non_dict_input() -> None:
 def test_validate_extracted_fields_drops_non_dict_party() -> None:
     fields = validate_extracted_fields({"partyOne": "Acme Inc"})
     assert fields.partyOne is None
+
+
+# --- _call_llm retry/repair ---------------------------------------------------
+
+
+def test_call_llm_retries_once_after_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion_sequence(
+            ["Sure, let's talk about your NDA!", json.dumps({"reply": "Got it", "fields": {}})]
+        ),
+    )
+
+    result = chat_module._call_llm([chat_module.ChatMessage(role="user", content="hi")], NdaFields())
+
+    assert result == {"reply": "Got it", "fields": {}}
+
+
+def test_call_llm_raises_after_repeated_invalid_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion_sequence(["not json", "still not json"]),
+    )
+
+    with pytest.raises(LLMOutputError):
+        chat_module._call_llm([chat_module.ChatMessage(role="user", content="hi")], NdaFields())
 
 
 # --- merge_fields ------------------------------------------------------------
@@ -210,6 +248,21 @@ def test_chat_endpoint_falls_back_when_reply_is_blank(
 ) -> None:
     monkeypatch.setattr(
         chat_module, "completion", fake_completion({"reply": "  ", "fields": {}})
+    )
+
+    response = client.post("/api/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+
+    assert response.status_code == 200
+    assert response.json()["reply"] == "Sorry, could you rephrase that?"
+
+
+def test_chat_endpoint_replies_gracefully_when_model_never_returns_json(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion_sequence(["not json", "still not json"]),
     )
 
     response = client.post("/api/chat", json={"messages": [{"role": "user", "content": "hi"}]})
