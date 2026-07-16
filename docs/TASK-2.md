@@ -12,3 +12,7 @@ The user enters in some key information in a form. The website then displays the
 
 The user can download the completed document locally.
 
+## Tests and review
+
+Add extensive automated tests, manual tests and have the code-review agents do the review.
+
