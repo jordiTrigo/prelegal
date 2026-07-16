@@ -19,7 +19,7 @@ When instructed to build a feature:
 
 ## AI design
 
-When writing code to make calls to LLMs, use your Cerebras skill to use LiteLLM via OpenRouter to the `openrouter/openai/gpt-oss-20b:free` model. You should use Structured Outputs so that you can interpret the results and populate fields in the legal document.
+When writing code to make calls to LLMs, use your Cerebras skill to use LiteLLM via OpenRouter to the `openrouter/openai/gpt-oss-20b:free` model. Interpret the results with JSON mode (`response_format={"type": "json_object"}`) and an explicit output-shape instruction in the prompt so you can populate fields in the legal document — see the note below on why strict Structured Outputs (schema-constrained `response_format`) isn't used here.
 
 Note: OpenRouter discontinued the free tier of `openai/gpt-oss-120b` (confirmed via their `/models` API); `openai/gpt-oss-20b:free` is its free replacement. Cerebras is no longer pinned as the inference provider for chat: it doesn't host either free `gpt-oss-20b` variant (only the paid `gpt-oss-120b`, and the project's OpenRouter account currently has $0 credits), so the free 20b model is routed to whichever provider OpenRouter has available (currently Darkbloom). That provider doesn't always honor `response_format` on conversational prompts, so `backend/app/chat.py` retries once with a stricter JSON-only reminder and falls back to a friendly "could you rephrase" reply rather than a 502 if it still doesn't return valid JSON. The paid `openai/gpt-oss-120b` via Cerebras remains the documented upgrade path (~$0.037 / $0.17 per million prompt/completion tokens) if reliability or quality needs later outweigh the $0 cost — it requires adding credits to the OpenRouter account first.
 
@@ -64,11 +64,12 @@ Backend available at http://localhost:8001
 - Single multi-stage Dockerfile (Node build → Python/uv runtime) and the six start/stop scripts.
 - Test coverage: pytest (backend), Jest (frontend units), Playwright (e2e across chromium/firefox/webkit, including axe accessibility, run against the real FastAPI server).
 
-**TASK-4 (AI chat) — done**, on branch `feature/ai-chat-nda` (uncommitted / not yet in a PR):
+**TASK-4 (AI chat) — done**, PR #6 (merged to `main`):
 - Replaced the field-by-field `NdaForm` with a freeform chat (`frontend/components/ChatPanel.tsx`): the user converses naturally and the assistant asks about whatever fields are still missing.
-- New `POST /api/chat` endpoint (`backend/app/chat.py`) calls the LLM per the AI design section (LiteLLM via OpenRouter, `openrouter/openai/gpt-oss-20b:free`, Cerebras provider, Structured Outputs via a Pydantic `response_format`) to extract Mutual NDA fields from the conversation and draft a reply.
-- Fields are modeled flat server-side (independent optional keys rather than a nested discriminated union) for reliable structured-output extraction, validated field-by-field (dropping any single bad value rather than rejecting the whole extraction), and merged onto the accumulated known fields turn by turn.
+- New `POST /api/chat` endpoint (`backend/app/chat.py`) calls the LLM per the AI design section (LiteLLM via OpenRouter, `openrouter/openai/gpt-oss-20b:free`, JSON mode) to extract Mutual NDA fields from the conversation and draft a reply.
+- Fields are modeled flat server-side (independent optional keys rather than a nested discriminated union) for a simpler shape to spell out in the prompt, validated field-by-field (dropping any single bad value rather than rejecting the whole extraction), and merged onto the accumulated known fields turn by turn.
 - The frontend (`frontend/lib/nda-chat.ts`) reconstructs the nested `NdaFormData` shape from the flat extracted fields for the existing Zod-validated live preview and PDF download, so `NdaDocument`/`generate-nda-pdf` are unchanged.
-- Test coverage: `backend/tests/test_chat.py` (field validation, merging, endpoint behavior incl. LLM-failure handling), `frontend/__tests__/ChatPanel.test.tsx` and `nda-chat.test.ts`, and `frontend/e2e/chat-flow.spec.ts` (renamed from `nda-flow.spec.ts`) covering the chat-to-preview-to-download flow with a mocked `/api/chat`.
+- Post-merge fix: the originally specified `openai/gpt-oss-120b:free` model was discontinued by OpenRouter mid-build, which surfaced as a 502 on every chat message. Swapped to `openai/gpt-oss-20b:free`, moved off strict Structured Outputs to JSON mode (the only provider backing the free model doesn't reliably honor schema-constrained decoding), and added a one-shot retry plus a graceful in-chat fallback reply instead of a 502 — see the AI design section above for the full rationale.
+- Test coverage: `backend/tests/test_chat.py` (field validation, merging, endpoint behavior incl. LLM-failure and JSON-repair handling), `frontend/__tests__/ChatPanel.test.tsx` and `nda-chat.test.ts`, and `frontend/e2e/chat-flow.spec.ts` (renamed from `nda-flow.spec.ts`) covering the chat-to-preview-to-download flow with a mocked `/api/chat`.
 
 **Not yet implemented**: other document types beyond Mutual NDA (TASK-5), real authentication and per-user document history (TASK-6).
