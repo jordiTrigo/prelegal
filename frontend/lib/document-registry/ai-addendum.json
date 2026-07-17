@@ -1,0 +1,44 @@
+{
+  "id": "ai-addendum",
+  "catalogNames": [
+    "AI Addendum"
+  ],
+  "fields": [
+    {
+      "id": "customer",
+      "label": "Customer",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "improvementRestrictions",
+      "label": "Improvement Restrictions",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "trainingData",
+      "label": "Training Data",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "trainingPurposes",
+      "label": "Training Purposes",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "trainingRestrictions",
+      "label": "Training Restrictions",
+      "type": "text",
+      "required": true
+    }
+  ]
+}

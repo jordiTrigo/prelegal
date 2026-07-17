@@ -11,7 +11,7 @@ test("the fake login screen brings the user into the platform", async ({ page })
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page).toHaveURL(/\/app(\?.*)?$/);
-  await expect(page.getByRole("heading", { name: "Mutual NDA Creator" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Legal Document Assistant" })).toBeVisible();
 });
 
 test("submitting the login form with empty fields also enters the platform", async ({ page }) => {
@@ -22,10 +22,12 @@ test("submitting the login form with empty fields also enters the platform", asy
   await expect(page).toHaveURL(/\/app(\?.*)?$/);
 });
 
-test("the NDA tool is reachable directly at /app after a full page load", async ({ page }) => {
+test("the document assistant is reachable directly at /app after a full page load", async ({
+  page,
+}) => {
   await page.goto("/app");
 
-  await expect(page.getByRole("heading", { name: "Mutual NDA Creator" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Legal Document Assistant" })).toBeVisible();
 });
 
 test("the login screen has no detectable accessibility violations", async ({ page }) => {

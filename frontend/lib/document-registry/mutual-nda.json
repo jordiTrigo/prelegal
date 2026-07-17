@@ -1,0 +1,79 @@
+{
+  "id": "mutual-nda",
+  "catalogNames": [
+    "Mutual NDA - Cover Page",
+    "Mutual NDA - Standard Terms"
+  ],
+  "fields": [
+    {
+      "id": "partyOne",
+      "label": "Party 1",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "partyTwo",
+      "label": "Party 2",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "purpose",
+      "label": "Purpose",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "effectiveDate",
+      "label": "Effective Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "mndaTermType",
+      "label": "MNDA Term",
+      "type": "enum",
+      "options": [
+        "expires",
+        "until_terminated"
+      ],
+      "required": true
+    },
+    {
+      "id": "mndaTermYears",
+      "label": "MNDA Term Years",
+      "type": "integer",
+      "required": false,
+      "promptHint": "Only ask if mndaTermType is 'expires'."
+    },
+    {
+      "id": "confidentialityTermType",
+      "label": "Term of Confidentiality",
+      "type": "enum",
+      "options": [
+        "years",
+        "perpetuity"
+      ],
+      "required": true
+    },
+    {
+      "id": "confidentialityTermYears",
+      "label": "Confidentiality Term Years",
+      "type": "integer",
+      "required": false,
+      "promptHint": "Only ask if confidentialityTermType is 'years'."
+    },
+    {
+      "id": "governingLaw",
+      "label": "Governing Law",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "text",
+      "required": true
+    }
+  ]
+}

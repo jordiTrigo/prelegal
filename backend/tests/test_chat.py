@@ -1,4 +1,4 @@
-"""Unit and integration tests for the AI chat endpoint."""
+"""Integration tests for the AI chat endpoint (classification + field collection)."""
 
 import json
 
@@ -6,7 +6,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.chat as chat_module
-from app.chat import LLMOutputError, NdaFields, merge_fields, validate_extracted_fields
 
 
 class FakeMessage:
@@ -41,73 +40,6 @@ def fake_completion_sequence(contents: list[str]):
     return _completion
 
 
-# --- validate_extracted_fields ---------------------------------------------
-
-
-def test_validate_extracted_fields_keeps_valid_values() -> None:
-    raw = {
-        "partyOne": {"companyName": "Acme Inc", "signerName": "Jane Doe"},
-        "purpose": "Evaluating a partnership",
-        "effectiveDate": "2026-07-14",
-        "mndaTermType": "expires",
-        "mndaTermYears": 2,
-        "confidentialityTermType": "years",
-        "confidentialityTermYears": 3,
-        "governingLaw": "Delaware",
-        "jurisdiction": "New Castle, DE",
-    }
-
-    fields = validate_extracted_fields(raw)
-
-    assert fields.partyOne is not None
-    assert fields.partyOne.companyName == "Acme Inc"
-    assert fields.purpose == "Evaluating a partnership"
-    assert fields.effectiveDate == "2026-07-14"
-    assert fields.mndaTermType == "expires"
-    assert fields.mndaTermYears == 2
-    assert fields.confidentialityTermType == "years"
-    assert fields.confidentialityTermYears == 3
-    assert fields.governingLaw == "Delaware"
-    assert fields.jurisdiction == "New Castle, DE"
-
-
-def test_validate_extracted_fields_drops_blank_strings() -> None:
-    fields = validate_extracted_fields({"purpose": "   ", "governingLaw": ""})
-    assert fields.purpose is None
-    assert fields.governingLaw is None
-
-
-def test_validate_extracted_fields_drops_malformed_date() -> None:
-    fields = validate_extracted_fields({"effectiveDate": "07/14/2026"})
-    assert fields.effectiveDate is None
-
-
-def test_validate_extracted_fields_drops_pre_1900_date() -> None:
-    fields = validate_extracted_fields({"effectiveDate": "1899-12-31"})
-    assert fields.effectiveDate is None
-
-
-def test_validate_extracted_fields_drops_out_of_range_years() -> None:
-    fields = validate_extracted_fields({"mndaTermYears": 100, "confidentialityTermYears": 0})
-    assert fields.mndaTermYears is None
-    assert fields.confidentialityTermYears is None
-
-
-def test_validate_extracted_fields_drops_invalid_enum() -> None:
-    fields = validate_extracted_fields({"mndaTermType": "forever"})
-    assert fields.mndaTermType is None
-
-
-def test_validate_extracted_fields_handles_non_dict_input() -> None:
-    fields = validate_extracted_fields(None)
-    assert fields == NdaFields()
-
-
-def test_validate_extracted_fields_drops_non_dict_party() -> None:
-    fields = validate_extracted_fields({"partyOne": "Acme Inc"})
-    assert fields.partyOne is None
-
-
 # --- _call_llm retry/repair ---------------------------------------------------
 
 
@@ -116,11 +48,11 @@ def test_call_llm_retries_once_after_invalid_json(monkeypatch: pytest.MonkeyPatc
         chat_module,
         "completion",
         fake_completion_sequence(
-            ["Sure, let's talk about your NDA!", json.dumps({"reply": "Got it", "fields": {}})]
+            ["Sure, let's talk!", json.dumps({"reply": "Got it", "fields": {}})]
         ),
     )
 
-    result = chat_module._call_llm([chat_module.ChatMessage(role="user", content="hi")], NdaFields())
+    result = chat_module._call_llm("system", [chat_module.ChatMessage(role="user", content="hi")])
 
     assert result == {"reply": "Got it", "fields": {}}
 
@@ -132,44 +64,82 @@ def test_call_llm_raises_after_repeated_invalid_json(monkeypatch: pytest.MonkeyP
         fake_completion_sequence(["not json", "still not json"]),
     )
 
-    with pytest.raises(LLMOutputError):
-        chat_module._call_llm([chat_module.ChatMessage(role="user", content="hi")], NdaFields())
+    with pytest.raises(chat_module.LLMOutputError):
+        chat_module._call_llm("system", [chat_module.ChatMessage(role="user", content="hi")])
 
 
-# --- merge_fields ------------------------------------------------------------
+# --- classification turn (documentType unset) --------------------------------
 
 
-def test_merge_fields_merges_party_subfields() -> None:
-    current = NdaFields(partyOne=chat_module.PartyFields(companyName="Acme Inc"))
-    extracted = NdaFields(partyOne=chat_module.PartyFields(signerName="Jane Doe"))
+def test_chat_endpoint_resolves_document_type(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion(
+            {
+                "reply": "Great, let's put together a Data Processing Agreement.",
+                "documentType": "dpa",
+            }
+        ),
+    )
 
-    merged = merge_fields(current, extracted)
+    response = client.post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": "I need a DPA"}]},
+    )
 
-    assert merged.partyOne.companyName == "Acme Inc"
-    assert merged.partyOne.signerName == "Jane Doe"
-
-
-def test_merge_fields_overwrites_scalar_fields() -> None:
-    current = NdaFields(purpose="Old purpose")
-    extracted = NdaFields(purpose="New purpose")
-
-    merged = merge_fields(current, extracted)
-
-    assert merged.purpose == "New purpose"
-
-
-def test_merge_fields_preserves_fields_not_mentioned() -> None:
-    current = NdaFields(purpose="Evaluating a partnership", governingLaw="Delaware")
-    extracted = NdaFields(jurisdiction="New Castle, DE")
-
-    merged = merge_fields(current, extracted)
-
-    assert merged.purpose == "Evaluating a partnership"
-    assert merged.governingLaw == "Delaware"
-    assert merged.jurisdiction == "New Castle, DE"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["documentType"] == "dpa"
 
 
-# --- POST /api/chat -----------------------------------------------------------
+def test_chat_endpoint_ignores_hallucinated_document_type(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion({"reply": "Let's get started.", "documentType": "not-a-real-type"}),
+    )
+
+    response = client.post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": "hi"}]},
+    )
+
+    assert response.status_code == 200
+    assert response.json().get("documentType") is None
+
+
+def test_chat_endpoint_explains_unsupported_document(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion(
+            {
+                "reply": "We can't generate an Employment Agreement, but a Design "
+                "Partner Agreement might be close - want to try that instead?",
+                "documentType": None,
+            }
+        ),
+    )
+
+    response = client.post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": "I need an employment agreement"}]},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body.get("documentType") is None
+    assert "Design Partner Agreement" in body["reply"]
+
+
+# --- field-collection turn (documentType set) ---------------------------------
 
 
 def test_chat_endpoint_returns_reply_and_extracted_fields(
@@ -180,21 +150,24 @@ def test_chat_endpoint_returns_reply_and_extracted_fields(
         "completion",
         fake_completion(
             {
-                "reply": "Got it, thanks!",
-                "fields": {"partyOne": {"companyName": "Acme Inc"}},
+                "reply": "Got it, thanks! What's the duration of processing?",
+                "fields": {"customer": {"companyName": "Acme Inc"}},
             }
         ),
     )
 
     response = client.post(
         "/api/chat",
-        json={"messages": [{"role": "user", "content": "We are Acme Inc"}]},
+        json={
+            "messages": [{"role": "user", "content": "We are Acme Inc"}],
+            "documentType": "dpa",
+        },
     )
 
     assert response.status_code == 200
     body = response.json()
-    assert body["reply"] == "Got it, thanks!"
-    assert body["fields"]["partyOne"]["companyName"] == "Acme Inc"
+    assert body["documentType"] == "dpa"
+    assert body["fields"]["customer"]["companyName"] == "Acme Inc"
 
 
 def test_chat_endpoint_merges_with_prior_known_fields(
@@ -205,8 +178,8 @@ def test_chat_endpoint_merges_with_prior_known_fields(
         "completion",
         fake_completion(
             {
-                "reply": "And the other party?",
-                "fields": {"partyOne": {"signerName": "Jane Doe"}},
+                "reply": "And who signs for them?",
+                "fields": {"customer": {"signerName": "Jane Doe"}},
             }
         ),
     )
@@ -215,14 +188,15 @@ def test_chat_endpoint_merges_with_prior_known_fields(
         "/api/chat",
         json={
             "messages": [{"role": "user", "content": "Jane Doe will sign"}],
-            "fields": {"partyOne": {"companyName": "Acme Inc"}},
+            "documentType": "dpa",
+            "fields": {"customer": {"companyName": "Acme Inc"}},
         },
     )
 
     assert response.status_code == 200
-    party_one = response.json()["fields"]["partyOne"]
-    assert party_one["companyName"] == "Acme Inc"
-    assert party_one["signerName"] == "Jane Doe"
+    customer = response.json()["fields"]["customer"]
+    assert customer["companyName"] == "Acme Inc"
+    assert customer["signerName"] == "Jane Doe"
 
 
 def test_chat_endpoint_drops_invalid_extracted_field(
@@ -236,11 +210,31 @@ def test_chat_endpoint_drops_invalid_extracted_field(
 
     response = client.post(
         "/api/chat",
-        json={"messages": [{"role": "user", "content": "500 years"}]},
+        json={"messages": [{"role": "user", "content": "500 years"}], "documentType": "mutual-nda"},
     )
 
     assert response.status_code == 200
     assert "mndaTermYears" not in response.json()["fields"]
+
+
+def test_chat_endpoint_appends_followup_question_when_fields_missing(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(
+        chat_module,
+        "completion",
+        fake_completion(
+            {"reply": "Thanks for that.", "fields": {"customer": {"companyName": "Acme Inc"}}}
+        ),
+    )
+
+    response = client.post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": "We are Acme Inc"}], "documentType": "dpa"},
+    )
+
+    assert response.status_code == 200
+    assert "?" in response.json()["reply"]
 
 
 def test_chat_endpoint_falls_back_when_reply_is_blank(
@@ -250,10 +244,13 @@ def test_chat_endpoint_falls_back_when_reply_is_blank(
         chat_module, "completion", fake_completion({"reply": "  ", "fields": {}})
     )
 
-    response = client.post("/api/chat", json={"messages": [{"role": "user", "content": "hi"}]})
+    response = client.post(
+        "/api/chat",
+        json={"messages": [{"role": "user", "content": "hi"}], "documentType": "mutual-nda"},
+    )
 
     assert response.status_code == 200
-    assert response.json()["reply"] == "Sorry, could you rephrase that?"
+    assert "Sorry, could you rephrase that?" in response.json()["reply"]
 
 
 def test_chat_endpoint_replies_gracefully_when_model_never_returns_json(

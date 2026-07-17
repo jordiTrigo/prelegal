@@ -1,0 +1,122 @@
+{
+  "id": "csa",
+  "catalogNames": [
+    "Cloud Service Agreement (CSA)"
+  ],
+  "templateFiles": [
+    "CSA.md"
+  ],
+  "fields": [
+    {
+      "id": "additionalWarranties",
+      "label": "Additional Warranties",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "chosenCourts",
+      "label": "Chosen Courts",
+      "type": "text",
+      "required": true,
+      "promptHint": "The city/county and state or country where legal disputes will be resolved."
+    },
+    {
+      "id": "customer",
+      "label": "Customer",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "customerCoveredClaims",
+      "label": "Customer Covered Claims",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "effectiveDate",
+      "label": "Effective Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "generalCapAmount",
+      "label": "General Cap Amount",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "governingLaw",
+      "label": "Governing Law",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "increasedCapAmount",
+      "label": "Increased Cap Amount",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "increasedClaims",
+      "label": "Increased Claims",
+      "type": "list",
+      "required": true,
+      "promptHint": "A short list of claim types (e.g. breach of confidentiality, IP infringement) subject to the increased liability cap, if any."
+    },
+    {
+      "id": "nonRenewalNoticeDate",
+      "label": "Non-Renewal Notice Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "orderDate",
+      "label": "Order Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "paymentProcess",
+      "label": "Payment Process",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "providerCoveredClaims",
+      "label": "Provider Covered Claims",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "subscriptionPeriods",
+      "label": "Subscription Periods",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "technicalSupport",
+      "label": "Technical Support",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "unlimitedClaims",
+      "label": "Unlimited Claims",
+      "type": "list",
+      "required": true,
+      "promptHint": "A short list of claim types (e.g. gross negligence, fraud) with no liability cap, if any."
+    },
+    {
+      "id": "useLimitations",
+      "label": "Use Limitations",
+      "type": "text",
+      "required": true
+    }
+  ]
+}

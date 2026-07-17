@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import type { ChatMessage } from "@/lib/nda-chat";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { ChatMessage } from "@/lib/document-chat";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
@@ -12,6 +12,16 @@ interface ChatPanelProps {
 
 export function ChatPanel({ messages, onSend, pending, error }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // The input is disabled while pending, which drops DOM focus; restore it
+  // once a reply lands (success or error) so the user can keep typing
+  // without reaching for the mouse after every turn.
+  useEffect(() => {
+    if (!pending) {
+      inputRef.current?.focus();
+    }
+  }, [pending]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,6 +65,7 @@ export function ChatPanel({ messages, onSend, pending, error }: ChatPanelProps) 
         </label>
         <input
           id="chat-input"
+          ref={inputRef}
           type="text"
           className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
           value={draft}

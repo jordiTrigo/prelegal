@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ChatPanel } from "@/components/ChatPanel";
-import type { ChatMessage } from "@/lib/nda-chat";
+import type { ChatMessage } from "@/lib/document-chat";
 
 const messages: ChatMessage[] = [{ role: "assistant", content: "Hi! Tell me about your deal." }];
 
@@ -50,5 +50,25 @@ describe("ChatPanel", () => {
     expect(
       screen.getByText("Something went wrong. Please try sending your message again.")
     ).toBeInTheDocument();
+  });
+
+  it("returns focus to the message input once a reply lands", () => {
+    const { rerender } = render(
+      <ChatPanel messages={messages} onSend={jest.fn()} pending={true} error={false} />
+    );
+
+    rerender(<ChatPanel messages={messages} onSend={jest.fn()} pending={false} error={false} />);
+
+    expect(screen.getByLabelText("Message")).toHaveFocus();
+  });
+
+  it("returns focus to the message input after an error", () => {
+    const { rerender } = render(
+      <ChatPanel messages={messages} onSend={jest.fn()} pending={true} error={false} />
+    );
+
+    rerender(<ChatPanel messages={messages} onSend={jest.fn()} pending={false} error={true} />);
+
+    expect(screen.getByLabelText("Message")).toHaveFocus();
   });
 });

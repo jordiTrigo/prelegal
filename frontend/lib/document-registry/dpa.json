@@ -1,0 +1,80 @@
+{
+  "id": "dpa",
+  "catalogNames": [
+    "Data Processing Agreement (DPA)"
+  ],
+  "fields": [
+    {
+      "id": "approvedSubprocessors",
+      "label": "Approved Subprocessors",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "categoriesOfDataSubjects",
+      "label": "Categories of Data Subjects",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "categoriesOfPersonalData",
+      "label": "Categories of Personal Data",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "customer",
+      "label": "Customer",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "durationOfProcessing",
+      "label": "Duration of Processing",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "frequencyOfTransfer",
+      "label": "Frequency of Transfer",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "governingMemberState",
+      "label": "Governing Member State",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "natureAndPurposeOfProcessing",
+      "label": "Nature and Purpose of Processing",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "providerSecurityContact",
+      "label": "Provider Security Contact",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "specialCategoryData",
+      "label": "Special Category Data",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "specialCategoryDataRestrictionsOrSafeguards",
+      "label": "Special Category Data Restrictions or Safeguards",
+      "type": "list",
+      "required": true
+    }
+  ]
+}

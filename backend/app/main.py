@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 
 from app.chat import router as chat_router
 from app.db import init_db
+from app.document_types_router import router as document_types_router
 from app.settings import settings
 from app.static import resolve_frontend_file
 
@@ -30,6 +31,7 @@ def health() -> dict[str, str]:
 
 
 api_router.include_router(chat_router)
+api_router.include_router(document_types_router)
 app.include_router(api_router)
 
 

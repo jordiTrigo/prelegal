@@ -1,0 +1,66 @@
+{
+  "id": "design-partner-agreement",
+  "catalogNames": [
+    "Design Partner Agreement"
+  ],
+  "templateFiles": [
+    "design-partner-agreement.md"
+  ],
+  "fields": [
+    {
+      "id": "chosenCourts",
+      "label": "Chosen Courts",
+      "type": "text",
+      "required": true,
+      "promptHint": "The city/county and state or country where legal disputes will be resolved."
+    },
+    {
+      "id": "effectiveDate",
+      "label": "Effective Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "fees",
+      "label": "Fees",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "governingLaw",
+      "label": "Governing Law",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "noticeAddress",
+      "label": "Notice Address",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "partner",
+      "label": "Partner",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "program",
+      "label": "Program",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "term",
+      "label": "Term",
+      "type": "text",
+      "required": true
+    }
+  ]
+}
