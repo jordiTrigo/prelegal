@@ -15,10 +15,34 @@ def test_root_serves_login_page(client: TestClient) -> None:
     assert "login" in response.text
 
 
-def test_app_route_serves_tool_page(client: TestClient) -> None:
-    response = client.get("/app")
+def test_app_route_redirects_when_signed_out(client: TestClient) -> None:
+    response = client.get("/app", follow_redirects=False)
+    assert response.status_code in (302, 307)
+    assert response.headers["location"] == "/"
+
+
+def test_documents_route_redirects_when_signed_out(client: TestClient) -> None:
+    response = client.get("/documents", follow_redirects=False)
+    assert response.status_code in (302, 307)
+    assert response.headers["location"] == "/"
+
+
+def test_app_route_serves_tool_page_when_signed_in(signed_up_client: TestClient) -> None:
+    response = signed_up_client.get("/app")
     assert response.status_code == 200
     assert "nda tool" in response.text
+
+
+def test_documents_route_serves_page_when_signed_in(signed_up_client: TestClient) -> None:
+    response = signed_up_client.get("/documents")
+    assert response.status_code == 200
+    assert "my documents" in response.text
+
+
+def test_signup_route_is_not_gated(client: TestClient) -> None:
+    response = client.get("/signup")
+    assert response.status_code == 200
+    assert "sign up" in response.text
 
 
 def test_static_asset(client: TestClient) -> None:

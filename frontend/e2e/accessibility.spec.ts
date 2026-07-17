@@ -1,8 +1,9 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { signUpAndLand } from "./auth-helpers";
 
 test("the empty chat has no detectable accessibility violations", async ({ page }) => {
-  await page.goto("/app");
+  await signUpAndLand(page);
 
   const results = await new AxeBuilder({ page }).analyze();
 
@@ -35,7 +36,7 @@ test("the chat with an assistant reply and a resolved document type has no detec
     });
   });
 
-  await page.goto("/app");
+  await signUpAndLand(page);
 
   // Retry the first send until it round-trips: see chat-flow.spec.ts for the
   // hydration race this guards against.
@@ -46,6 +47,15 @@ test("the chat with an assistant reply and a resolved document type has no detec
       timeout: 1000,
     });
   }).toPass();
+
+  const results = await new AxeBuilder({ page }).analyze();
+
+  expect(results.violations).toEqual([]);
+});
+
+test("the documents page has no detectable accessibility violations", async ({ page }) => {
+  await signUpAndLand(page);
+  await page.goto("/documents");
 
   const results = await new AxeBuilder({ page }).analyze();
 

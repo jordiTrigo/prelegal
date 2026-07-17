@@ -16,6 +16,8 @@ def fake_out(tmp_path: Path) -> Path:
     (out / "_next" / "static").mkdir(parents=True)
     (out / "index.html").write_text("<html>login</html>")
     (out / "app.html").write_text("<html>nda tool</html>")
+    (out / "signup.html").write_text("<html>sign up</html>")
+    (out / "documents.html").write_text("<html>my documents</html>")
     (out / "404.html").write_text("<html>not found</html>")
     (out / "_next" / "static" / "chunk.js").write_text("console.log('chunk')")
     return out
@@ -28,3 +30,13 @@ def client(fake_out: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> T
     with TestClient(app) as test_client:
         yield test_client
     del app.state.frontend_dist_dir
+
+
+@pytest.fixture
+def signed_up_client(client: TestClient) -> TestClient:
+    """A client that has already signed up and carries a valid session cookie."""
+    response = client.post(
+        "/api/auth/signup", json={"email": "jane@example.com", "password": "correct-horse"}
+    )
+    assert response.status_code == 200
+    return client

@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { signUpAndLand } from "./auth-helpers";
 
 const NDA_TEMPLATE_MARKDOWN = [
   "# Standard Terms",
@@ -57,7 +58,7 @@ test("chatting with the assistant resolves a document type, fills the preview, a
     });
   });
 
-  await page.goto("/app");
+  await signUpAndLand(page);
 
   const downloadButton = page.getByRole("button", { name: "Download PDF" });
   await expect(downloadButton).toBeDisabled();
@@ -107,7 +108,7 @@ test("the download button is disabled until the assistant has all required field
     });
   });
 
-  await page.goto("/app");
+  await signUpAndLand(page);
 
   await expect(async () => {
     await page.getByLabel("Message", { exact: true }).fill("We need an NDA with Acme Inc.");
@@ -138,7 +139,7 @@ test("explains an unsupported document request and suggests the closest supporte
     });
   });
 
-  await page.goto("/app");
+  await signUpAndLand(page);
 
   await expect(async () => {
     await page.getByLabel("Message", { exact: true }).fill("I need an employment agreement.");
