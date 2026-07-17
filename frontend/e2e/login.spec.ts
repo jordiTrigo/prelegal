@@ -1,37 +1,79 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { signOutAndLand, signUpAndLand, TEST_PASSWORD, uniqueEmail } from "./auth-helpers";
 
-test("the fake login screen brings the user into the platform", async ({ page }) => {
-  await page.goto("/");
-
-  await page.getByLabel("Email").fill("anyone@example.com");
-  await page.getByLabel("Password").fill("anything-works");
-  // Works both before hydration (native submit to action="/app") and after
-  // (onSubmit router.push), so no hydration wait is needed.
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  await expect(page).toHaveURL(/\/app(\?.*)?$/);
+test("signing up creates an account and brings the user into the platform", async ({ page }) => {
+  await signUpAndLand(page);
   await expect(page.getByRole("heading", { name: "Legal Document Assistant" })).toBeVisible();
 });
 
-test("submitting the login form with empty fields also enters the platform", async ({ page }) => {
-  await page.goto("/");
+test("a returning user can sign in with their email and password", async ({ page }) => {
+  const email = await signUpAndLand(page);
+  await signOutAndLand(page);
 
-  await page.getByRole("button", { name: "Sign in" }).click();
-
-  await expect(page).toHaveURL(/\/app(\?.*)?$/);
+  await expect(async () => {
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/app(\?.*)?$/, { timeout: 1000 });
+  }).toPass();
 });
 
-test("the document assistant is reachable directly at /app after a full page load", async ({
-  page,
-}) => {
+test("sign in fails with the wrong password", async ({ page }) => {
+  const email = await signUpAndLand(page);
+  await signOutAndLand(page);
+
+  await expect(async () => {
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill("the-wrong-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page.getByText("Invalid email or password")).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await expect(page).toHaveURL("/");
+});
+
+test("signing up with an email already in use shows an error", async ({ page }) => {
+  const email = uniqueEmail("duplicate");
+  await page.goto("/signup");
+  await expect(async () => {
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Sign up" }).click();
+    await expect(page).toHaveURL(/\/app(\?.*)?$/, { timeout: 1000 });
+  }).toPass();
+
+  await signOutAndLand(page);
+  await page.goto("/signup");
+  await expect(async () => {
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Sign up" }).click();
+    await expect(page.getByText("An account with that email already exists")).toBeVisible({
+      timeout: 1000,
+    });
+  }).toPass();
+});
+
+test("/app redirects to the sign-in screen when signed out", async ({ page }) => {
   await page.goto("/app");
+  await expect(page).toHaveURL("/");
+});
 
-  await expect(page.getByRole("heading", { name: "Legal Document Assistant" })).toBeVisible();
+test("/documents redirects to the sign-in screen when signed out", async ({ page }) => {
+  await page.goto("/documents");
+  await expect(page).toHaveURL("/");
 });
 
 test("the login screen has no detectable accessibility violations", async ({ page }) => {
   await page.goto("/");
+
+  const results = await new AxeBuilder({ page }).analyze();
+
+  expect(results.violations).toEqual([]);
+});
+
+test("the sign-up screen has no detectable accessibility violations", async ({ page }) => {
+  await page.goto("/signup");
 
   const results = await new AxeBuilder({ page }).analyze();
 

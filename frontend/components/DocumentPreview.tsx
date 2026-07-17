@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { DocumentCoverSummary } from "./DocumentCoverSummary";
 import { DocumentBody } from "./DocumentBody";
-import { CC_ATTRIBUTION } from "@/lib/attribution";
+import { CC_ATTRIBUTION, DRAFT_DISCLAIMER } from "@/lib/attribution";
 import type { DocumentFields } from "@/lib/field-format";
 import { renderDocumentBlocks } from "@/lib/render-document";
 import type { RenderBlock } from "@/lib/markdown-template";
@@ -38,6 +38,13 @@ export function DocumentPreview({
   return (
     <article className="prose prose-sm max-w-none dark:prose-invert">
       <h1 className="text-xl font-semibold">{descriptor.catalogNames[0]}</h1>
+
+      <p
+        role="note"
+        className="not-prose mb-6 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200"
+      >
+        {DRAFT_DISCLAIMER}
+      </p>
 
       <DocumentCoverSummary descriptor={descriptor} fields={fields} />
 

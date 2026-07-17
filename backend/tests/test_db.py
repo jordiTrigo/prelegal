@@ -21,6 +21,14 @@ def test_init_db_creates_users_table(tmp_path: Path) -> None:
     assert "users" in table_names(db_path)
 
 
+def test_init_db_creates_sessions_and_documents_tables(tmp_path: Path) -> None:
+    db_path = tmp_path / "app.db"
+    init_db(db_path)
+    tables = table_names(db_path)
+    assert "sessions" in tables
+    assert "documents" in tables
+
+
 def test_init_db_creates_parent_directories(tmp_path: Path) -> None:
     db_path = tmp_path / "nested" / "dir" / "app.db"
     init_db(db_path)

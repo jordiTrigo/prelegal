@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
-import { CC_ATTRIBUTION } from "@/lib/attribution";
+import { CC_ATTRIBUTION, DRAFT_DISCLAIMER } from "@/lib/attribution";
 import {
   coverSummaryDisplayValue,
   partitionFields,
@@ -26,6 +26,15 @@ const styles = StyleSheet.create({
   bodyText: { marginBottom: 8 },
   bold: { fontWeight: 700 },
   attribution: { marginTop: 24, fontSize: 8, color: "#666" },
+  disclaimer: {
+    marginBottom: 16,
+    padding: 8,
+    fontSize: 9,
+    color: "#78350f",
+    backgroundColor: "#fffbeb",
+    borderWidth: 1,
+    borderColor: "#fcd34d",
+  },
 });
 
 const DEPTH_INDENT_PT = 12;
@@ -62,6 +71,8 @@ export function DocumentPdfPreview({
     <Document title={descriptor.catalogNames[0]}>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{descriptor.catalogNames[0]}</Text>
+
+        <Text style={styles.disclaimer}>{DRAFT_DISCLAIMER}</Text>
 
         <Text style={styles.sectionHeading}>Details</Text>
         {detailFields.map((field) => (
