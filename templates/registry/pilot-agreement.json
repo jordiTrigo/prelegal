@@ -1,0 +1,60 @@
+{
+  "id": "pilot-agreement",
+  "catalogNames": [
+    "Pilot Agreement"
+  ],
+  "templateFiles": [
+    "Pilot-Agreement.md"
+  ],
+  "fields": [
+    {
+      "id": "chosenCourts",
+      "label": "Chosen Courts",
+      "type": "text",
+      "required": true,
+      "promptHint": "The city/county and state or country where legal disputes will be resolved."
+    },
+    {
+      "id": "customer",
+      "label": "Customer",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "effectiveDate",
+      "label": "Effective Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "generalCapAmount",
+      "label": "General Cap Amount",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "governingLaw",
+      "label": "Governing Law",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "noticeAddress",
+      "label": "Notice Address",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "pilotPeriod",
+      "label": "Pilot Period",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    }
+  ]
+}

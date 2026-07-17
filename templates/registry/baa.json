@@ -1,0 +1,41 @@
+{
+  "id": "baa",
+  "catalogNames": [
+    "Business Associate Agreement (BAA)"
+  ],
+  "templateFiles": [
+    "BAA.md"
+  ],
+  "fields": [
+    {
+      "id": "baaEffectiveDate",
+      "label": "BAA Effective Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "breachNotificationPeriod",
+      "label": "Breach Notification Period",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "company",
+      "label": "Company",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "limitations",
+      "label": "Limitations",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    }
+  ]
+}

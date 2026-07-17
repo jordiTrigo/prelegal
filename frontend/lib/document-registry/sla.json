@@ -1,0 +1,62 @@
+{
+  "id": "sla",
+  "catalogNames": [
+    "Service Level Agreement (SLA)"
+  ],
+  "fields": [
+    {
+      "id": "customer",
+      "label": "Customer",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "provider",
+      "label": "Provider",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "responseTimeCredit",
+      "label": "Response Time Credit",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "scheduledDowntime",
+      "label": "Scheduled Downtime",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "subscriptionPeriod",
+      "label": "Subscription Period",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "supportChannel",
+      "label": "Support Channel",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "targetResponseTime",
+      "label": "Target Response Time",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "targetUptime",
+      "label": "Target Uptime",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "uptimeCredit",
+      "label": "Uptime Credit",
+      "type": "text",
+      "required": true
+    }
+  ]
+}

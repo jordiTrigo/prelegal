@@ -1,0 +1,122 @@
+{
+  "id": "partnership-agreement",
+  "catalogNames": [
+    "Partnership Agreement"
+  ],
+  "templateFiles": [
+    "Partnership-Agreement.md"
+  ],
+  "fields": [
+    {
+      "id": "additionalWarranties",
+      "label": "Additional Warranties",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "brandGuidelines",
+      "label": "Brand Guidelines",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "chosenCourts",
+      "label": "Chosen Courts",
+      "type": "text",
+      "required": true,
+      "promptHint": "The city/county and state or country where legal disputes will be resolved."
+    },
+    {
+      "id": "company",
+      "label": "Company",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "companyCoveredClaim",
+      "label": "Company Covered Claim",
+      "type": "list",
+      "required": true
+    },
+    {
+      "id": "effectiveDate",
+      "label": "Effective Date",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "endDate",
+      "label": "End Date",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "generalCapAmount",
+      "label": "General Cap Amount",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "governingLaw",
+      "label": "Governing Law",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "increasedCapAmount",
+      "label": "Increased Cap Amount",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "increasedClaims",
+      "label": "Increased Claims",
+      "type": "list",
+      "required": true,
+      "promptHint": "A short list of claim types (e.g. breach of confidentiality, IP infringement) subject to the increased liability cap, if any."
+    },
+    {
+      "id": "obligations",
+      "label": "Obligations",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "partner",
+      "label": "Partner",
+      "type": "party",
+      "required": true
+    },
+    {
+      "id": "partnerCoveredClaims",
+      "label": "Partner Covered Claims",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "paymentProcess",
+      "label": "Payment Process",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "paymentSchedule",
+      "label": "Payment Schedule",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "territory",
+      "label": "Territory",
+      "type": "text",
+      "required": true
+    },
+    {
+      "id": "unlimitedClaims",
+      "label": "Unlimited Claims",
+      "type": "list",
+      "required": true,
+      "promptHint": "A short list of claim types (e.g. gross negligence, fraud) with no liability cap, if any."
+    }
+  ]
+}
