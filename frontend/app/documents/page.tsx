@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { getDocumentType } from "@/lib/document-registry";
 import { downloadDocumentPdf } from "@/lib/download-pdf";
 import { listDocuments, type SavedDocument } from "@/lib/documents-client";
+import { stashResumeDocument } from "@/lib/resume-document";
 
 function formatCreatedAt(isoTimestamp: string): string {
   // SQLite's CURRENT_TIMESTAMP is UTC without a timezone suffix; append one
@@ -34,6 +35,15 @@ function DocumentRow({ document }: { document: SavedDocument }) {
     }
   }
 
+  function handleEdit() {
+    stashResumeDocument({
+      documentId: document.id,
+      documentType: document.documentType,
+      fields: document.fields,
+    });
+    window.location.href = "/app";
+  }
+
   return (
     <li className="flex items-center justify-between gap-4 rounded-md border border-zinc-300 p-4 dark:border-zinc-700">
       <div>
@@ -47,14 +57,24 @@ function DocumentRow({ document }: { document: SavedDocument }) {
           </p>
         )}
       </div>
-      <button
-        type="button"
-        onClick={handleDownload}
-        disabled={!descriptor || downloadState === "pending"}
-        className="shrink-0 rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-      >
-        {downloadState === "pending" ? "Generating..." : "Download PDF"}
-      </button>
+      <div className="flex shrink-0 gap-2">
+        <button
+          type="button"
+          onClick={handleEdit}
+          disabled={!descriptor}
+          className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={!descriptor || downloadState === "pending"}
+          className="rounded-full border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          {downloadState === "pending" ? "Generating..." : "Download PDF"}
+        </button>
+      </div>
     </li>
   );
 }

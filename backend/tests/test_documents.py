@@ -70,6 +70,53 @@ def test_save_document_creates_a_new_row_when_fields_change(signed_up_client: Te
     assert len(signed_up_client.get("/api/documents").json()) == 2
 
 
+def test_save_document_with_id_updates_the_existing_row(signed_up_client: TestClient) -> None:
+    created = signed_up_client.post(
+        "/api/documents", json={"documentType": "mutual-nda", "fields": {"purpose": "First draft"}}
+    ).json()
+
+    updated = signed_up_client.post(
+        "/api/documents",
+        json={
+            "documentType": "mutual-nda",
+            "fields": {"purpose": "Edited draft"},
+            "documentId": created["id"],
+        },
+    )
+
+    assert updated.status_code == 200
+    body = updated.json()
+    assert body["id"] == created["id"]
+    assert body["fields"] == {"purpose": "Edited draft"}
+
+    all_documents = signed_up_client.get("/api/documents").json()
+    assert len(all_documents) == 1
+    assert all_documents[0]["fields"] == {"purpose": "Edited draft"}
+
+
+def test_save_document_with_id_rejects_another_users_document(
+    signed_up_client: TestClient,
+) -> None:
+    created = signed_up_client.post(
+        "/api/documents", json={"documentType": "mutual-nda", "fields": {"purpose": "Mine"}}
+    ).json()
+
+    signed_up_client.post("/api/auth/signout")
+    signed_up_client.post(
+        "/api/auth/signup", json={"email": "intruder@example.com", "password": "correct-horse"}
+    )
+    response = signed_up_client.post(
+        "/api/documents",
+        json={
+            "documentType": "mutual-nda",
+            "fields": {"purpose": "Hijacked"},
+            "documentId": created["id"],
+        },
+    )
+
+    assert response.status_code == 404
+
+
 def test_list_documents_orders_most_recent_first(signed_up_client: TestClient) -> None:
     signed_up_client.post(
         "/api/documents", json={"documentType": "mutual-nda", "fields": {"purpose": "First"}}

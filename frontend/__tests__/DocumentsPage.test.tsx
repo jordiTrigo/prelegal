@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import DocumentsPage from "@/app/documents/page";
+import { takeResumeDocument } from "@/lib/resume-document";
 
 function mockFetch(documentsResponse: unknown, documentsOk = true) {
   global.fetch = jest.fn((url: string) => {
@@ -18,6 +20,7 @@ function mockFetch(documentsResponse: unknown, documentsOk = true) {
 describe("DocumentsPage", () => {
   afterEach(() => {
     jest.restoreAllMocks();
+    sessionStorage.clear();
   });
 
   it("shows an empty state when there are no documents", async () => {
@@ -33,6 +36,23 @@ describe("DocumentsPage", () => {
     render(<DocumentsPage />);
     expect(await screen.findByText("Mutual NDA - Cover Page")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Download PDF" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
+  });
+
+  it("stashes the document for resume and navigates to /app when Edit is clicked", async () => {
+    mockFetch([
+      { id: 7, documentType: "dpa", fields: { purpose: "Testing" }, createdAt: "2026-07-14 10:00:00" },
+    ]);
+    const user = userEvent.setup();
+    render(<DocumentsPage />);
+
+    await user.click(await screen.findByRole("button", { name: "Edit" }));
+
+    expect(takeResumeDocument()).toEqual({
+      documentId: 7,
+      documentType: "dpa",
+      fields: { purpose: "Testing" },
+    });
   });
 
   it("shows an error message when loading fails", async () => {

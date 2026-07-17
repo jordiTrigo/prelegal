@@ -9,12 +9,13 @@ export interface SavedDocument {
 
 export async function saveDocument(
   documentType: string,
-  fields: DocumentFields
+  fields: DocumentFields,
+  documentId?: number
 ): Promise<SavedDocument> {
   const response = await fetch("/api/documents", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ documentType, fields }),
+    body: JSON.stringify({ documentType, fields, documentId: documentId ?? null }),
   });
   if (!response.ok) {
     throw new Error(`Failed to save document (status ${response.status})`);

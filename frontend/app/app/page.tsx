@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
 import { ChatPanel } from "@/components/ChatPanel";
 import { DocumentPreview } from "@/components/DocumentPreview";
@@ -13,17 +13,39 @@ import { getDocumentType } from "@/lib/document-registry";
 import { isDocumentComplete } from "@/lib/document-fields";
 import { saveDocument } from "@/lib/documents-client";
 import { downloadDocumentPdf } from "@/lib/download-pdf";
+import { takeResumeDocument } from "@/lib/resume-document";
 import type { DocumentFields } from "@/lib/field-format";
 
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_ASSISTANT_MESSAGE]);
   const [documentType, setDocumentType] = useState<string | null>(null);
   const [fields, setFields] = useState<DocumentFields>({});
+  const [editingDocumentId, setEditingDocumentId] = useState<number | null>(null);
   const [chatState, setChatState] = useState<"idle" | "pending" | "error">("idle");
   const [downloadState, setDownloadState] = useState<"idle" | "pending" | "error">("idle");
 
   const descriptor = documentType ? getDocumentType(documentType) : undefined;
   const complete = descriptor ? isDocumentComplete(descriptor, fields) : false;
+
+  // sessionStorage is only reachable client-side, so this has to run in an
+  // effect rather than a lazy useState initializer, which would also run
+  // during the static-export prerender.
+  useEffect(() => {
+    const resumed = takeResumeDocument();
+    if (!resumed) return;
+
+    setDocumentType(resumed.documentType);
+    setFields(resumed.fields);
+    setEditingDocumentId(resumed.documentId);
+
+    const name = getDocumentType(resumed.documentType)?.catalogNames[0] ?? resumed.documentType;
+    setMessages([
+      {
+        role: "assistant",
+        content: `Welcome back! I've loaded your ${name} so you can pick up where you left off. Tell me what you'd like to change.`,
+      },
+    ]);
+  }, []);
 
   async function handleSend(content: string) {
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content }];
@@ -41,8 +63,15 @@ export default function Home() {
       }
 
       const data: ChatApiResponse = await response.json();
+      const nextDocumentType = data.documentType ?? null;
       setMessages([...nextMessages, { role: "assistant", content: data.reply }]);
-      setDocumentType(data.documentType ?? null);
+      // If the conversation moves on to a different document type, this is
+      // no longer the document we were editing - a save from here on should
+      // create a new history entry, not overwrite the one resumed from.
+      if (editingDocumentId !== null && nextDocumentType !== documentType) {
+        setEditingDocumentId(null);
+      }
+      setDocumentType(nextDocumentType);
       setFields(data.fields ?? {});
       setChatState("idle");
     } catch {
@@ -60,10 +89,12 @@ export default function Home() {
 
       // A completed download is the "this document was created" moment
       // (see docs/TASK-6.md); best-effort, doesn't block the download the
-      // user already has in hand if saving to history fails. The backend
-      // dedupes repeat saves of unchanged fields, so re-downloading the same
-      // completed document doesn't pile up duplicate history rows.
-      saveDocument(descriptor.id, fields).catch(() => {});
+      // user already has in hand if saving to history fails. Editing a
+      // resumed document updates that same history row (editingDocumentId);
+      // otherwise the backend dedupes repeat saves of unchanged fields, so
+      // re-downloading a fresh completed document doesn't pile up
+      // duplicate history rows.
+      saveDocument(descriptor.id, fields, editingDocumentId ?? undefined).catch(() => {});
     } catch {
       setDownloadState("error");
     }
